@@ -10,6 +10,13 @@ const itemSchema = new mongoose.Schema({
   source: String,
   isLoaned: { type: Boolean, default: false },
   isDamaged: { type: Boolean, default: false },
+  // Thuộc tính động cho từng loại
+  attributes: [
+    {
+      key: String,
+      value: String
+    }
+  ]
 }, { timestamps: true });
 
 module.exports = mongoose.model("item", itemSchema);
