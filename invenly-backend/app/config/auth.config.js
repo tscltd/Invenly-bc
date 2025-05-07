@@ -1,7 +1,5 @@
-var dotent = require('dotenv');
-
-const secretJwt = process.env.SECRET_JWT;
+require('dotenv').config();
 
 module.exports = {
-  SECRET_JWT: secretJwt,
+  secretJwt: process.env.JWT_SECRET
 };

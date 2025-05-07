@@ -1,4 +1,4 @@
-var dotent = require('dotenv');
+require('dotenv').config();
 
 const redisURI = process.env.REDIS_URI;
 const mongodbURI = process.env.MONGODB_URI;

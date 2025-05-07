@@ -15,9 +15,6 @@ const userSchema = new mongoose.Schema({
   },
   roles: {
     type: Array
-  },
-  token: {
-    type: String
   }
 });
 
