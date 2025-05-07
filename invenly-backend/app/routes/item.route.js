@@ -22,6 +22,7 @@ module.exports = function (app) {
   app.post('/api/import-items', controller.importItems);
 
   app.post('/api/item/:id/upload-image', upload.single('image'), controller.uploadImage);
+  app.get('/api/item/code/:code', controller.getItemByCode);
   // Nếu có các route mở rộng sau này (nhập thêm số lượng, lọc theo category...)
 //   app.post('/api/items', authJwt.verifyToken, authJwt.isAdmin, controller.createItem);
 
