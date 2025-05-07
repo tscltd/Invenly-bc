@@ -1,4 +1,8 @@
 const Item = require("../models/item.model");
+const admin = require('firebase-admin');
+const path = require('path');
+const { v4: uuidv4 } = require('uuid');
+const cloudinary = require('../utils/cloudinary');
 
 // Lấy danh sách tất cả vật phẩm
 exports.getAllItems = async (req, res) => {
@@ -88,5 +92,32 @@ exports.deleteItem = async (req, res) => {
     res.json({ message: "Đã xoá vật phẩm" });
   } catch (err) {
     res.status(500).json({ error: "Lỗi server" });
+  }
+};
+
+
+exports.uploadImage = async (req, res) => {
+  try {
+    const file = req.file;
+
+    if (!file) return res.status(400).json({ error: 'Không có ảnh được gửi lên' });
+
+    const result = await cloudinary.uploader.upload_stream(
+      { folder: 'ivenly-items' },
+      (error, result) => {
+        if (error) {
+          console.error('Cloudinary error:', error);
+          return res.status(500).json({ error: 'Upload thất bại' });
+        }
+        return res.status(200).json({ imageUrl: result.secure_url });
+      }
+    );
+
+    // pipe buffer từ multer lên cloudinary
+    require('streamifier').createReadStream(file.buffer).pipe(result);
+
+  } catch (err) {
+    console.error('[UPLOAD ERROR]', err);
+    res.status(500).json({ error: 'Server lỗi khi upload ảnh' });
   }
 };

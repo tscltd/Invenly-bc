@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { storage, ref, uploadBytes, getDownloadURL } from '@/lib/firebase';
 
 export default function ItemImageUpdater() {
   const [items, setItems] = useState<any[]>([]);
@@ -13,10 +12,18 @@ export default function ItemImageUpdater() {
   }, []);
 
   const handleImageUpdate = async (itemId: string, file: File) => {
-    const fileRef = ref(storage, `item/${itemId}-${file.name}`);
-    await uploadBytes(fileRef, file);
-    const imageUrl = await getDownloadURL(fileRef);
+    const formData = new FormData();
+    formData.append('image', file);
 
+    const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/item/${itemId}/upload-image`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await uploadRes.json();
+    const imageUrl = data.imageUrl;
+
+    // Update DB with new image URL
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/item/${itemId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
