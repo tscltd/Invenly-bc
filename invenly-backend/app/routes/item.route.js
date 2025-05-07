@@ -19,6 +19,7 @@ module.exports = function (app) {
   app.post('/api/item', controller.createItem);
   app.put('/api/item/:id', controller.updateItem);
   app.delete('/api/item/:id', controller.deleteItem);
+  app.post('/api/import-items', controller.importItems);
 
   app.post('/api/item/:id/upload-image', upload.single('image'), controller.uploadImage);
   // Nếu có các route mở rộng sau này (nhập thêm số lượng, lọc theo category...)

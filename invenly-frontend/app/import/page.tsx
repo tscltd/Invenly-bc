@@ -10,14 +10,25 @@ export default function ItemImport() {
   const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
+  
     const data = await file.arrayBuffer();
     const workbook = XLSX.read(data);
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const raw = XLSX.utils.sheet_to_json(sheet);
+  
+    const raw = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as (string[])[];
+    const [headers, ...rows] = raw;
 
-    setItems(raw as any[]);
+    const formatted = rows.map((row) =>
+      headers.reduce((obj, key, i) => {
+        obj[key] = row[i];
+        return obj;
+      }, {} as Record<string, any>)
+    );
+
+    setItems(formatted);
+
   };
+  
 
   const handleImport = async () => {
     setLoading(true);

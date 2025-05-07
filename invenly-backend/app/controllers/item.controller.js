@@ -1,6 +1,4 @@
 const Item = require("../models/item.model");
-const admin = require('firebase-admin');
-const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const cloudinary = require('../utils/cloudinary');
 
@@ -92,6 +90,38 @@ exports.deleteItem = async (req, res) => {
     res.json({ message: "Đã xoá vật phẩm" });
   } catch (err) {
     res.status(500).json({ error: "Lỗi server" });
+  }
+};
+exports.importItems = async (req, res) => {
+  try {
+    const { manager, items } = req.body;
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: 'Không có dữ liệu sản phẩm để import' });
+    }
+
+    const createdItems = await Promise.all(
+      items.map(async (item) => {
+        const code = `ITEM-${Date.now()}-${uuidv4().slice(0, 6)}`; // sinh mã code duy nhất
+
+        const newItem = new Item({
+          name: item.name,
+          code,
+          category: item.category,
+          description: item.description || '',
+          source: item.source || '',
+          manager,
+          minThreshold: item.minThreshold || 0,
+        });
+
+        return await newItem.save();
+      })
+    );
+
+    res.status(201).json({ message: `Đã import ${createdItems.length} sản phẩm`, items: createdItems });
+  } catch (err) {
+    console.error('[IMPORT ERROR]', err);
+    res.status(500).json({ message: 'Lỗi khi import sản phẩm', error: err.message });
   }
 };
 
