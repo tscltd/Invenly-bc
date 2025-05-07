@@ -15,8 +15,8 @@ export default function LoginPage() {
     setError('');
 
     const res = await login(username, password);
-    if (res?.token) {
-      localStorage.setItem('vaultix_token', res.token);
+    if (res?.user.token) {
+      localStorage.setItem('invenly_token', res.token);
       router.push('/dashboard');
     } else {
       setError(res?.message || 'Đăng nhập thất bại');
