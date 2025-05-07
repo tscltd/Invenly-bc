@@ -1,5 +1,5 @@
 // app/layout.tsx
-import '../styles/global.css'
+import './globals.css'
 import { ReactNode } from 'react'
 import Footer from '@/components/Footer'
 
