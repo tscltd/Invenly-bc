@@ -2,38 +2,37 @@ const Item = require("../models/item.model");
 const { v4: uuidv4 } = require('uuid');
 const cloudinary = require('../utils/cloudinary');
 
-// Lấy danh sách tất cả vật phẩm
+// Lấy danh sách tất cả vật phẩm chưa bị xóa
 exports.getAllItems = async (req, res) => {
   try {
-    const items = await Item.find().sort({ createdAt: -1 });
+    const items = await Item.find({ isDeleted: { $ne: true } });
     res.json(items);
   } catch (err) {
-    res.status(500).json({ error: "Lỗi server" });
+    res.status(500).json({ error: 'Lỗi server' });
   }
 };
 
-// Lấy chi tiết một vật phẩm theo ID
+// Lấy chi tiết vật phẩm theo ID (nếu chưa bị xóa)
 exports.getItemById = async (req, res) => {
   try {
-    const item = await Item.findById(req.params.id);
-    if (!item) return res.status(404).json({ error: "Không tìm thấy vật phẩm" });
+    const item = await Item.findOne({ _id: req.params.id, isDeleted: { $ne: true } });
+    if (!item) return res.status(404).json({ error: 'Không tìm thấy vật phẩm' });
     res.json(item);
   } catch (err) {
-    res.status(500).json({ error: "Lỗi server" });
+    res.status(500).json({ error: 'Lỗi server' });
   }
 };
 
+// Lấy theo mã code (cho scan QR)
 exports.getItemByCode = async (req, res) => {
-    try {
-      const item = await Item.findOne({ code: req.params.code });
-      if (!item) {
-        return res.status(404).json({ error: "Không tìm thấy vật phẩm với mã này" });
-      }
-      res.json(item);
-    } catch (err) {
-      res.status(500).json({ error: "Lỗi server" });
-    }
-  };
+  try {
+    const item = await Item.findOne({ code: req.params.code, isDeleted: { $ne: true } });
+    if (!item) return res.status(404).json({ error: 'Không tìm thấy vật phẩm' });
+    res.json(item);
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+};
   
 
 // Tạo mới vật phẩm
@@ -74,24 +73,25 @@ exports.createItem = async (req, res) => {
 // Cập nhật vật phẩm
 exports.updateItem = async (req, res) => {
   try {
-    const item = await Item.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!item) return res.status(404).json({ error: "Không tìm thấy vật phẩm" });
-    res.json({ message: "Cập nhật thành công", item });
+    const updated = await Item.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updated) return res.status(404).json({ error: 'Không tìm thấy vật phẩm' });
+    res.json({ message: 'Cập nhật thành công', item: updated });
   } catch (err) {
-    res.status(500).json({ error: "Lỗi server" });
+    res.status(500).json({ error: 'Lỗi server' });
   }
 };
 
-// Xoá vật phẩm
+// Xóa mềm vật phẩm (soft delete)
 exports.deleteItem = async (req, res) => {
   try {
-    const item = await Item.findByIdAndDelete(req.params.id);
-    if (!item) return res.status(404).json({ error: "Không tìm thấy vật phẩm" });
-    res.json({ message: "Đã xoá vật phẩm" });
+    const deleted = await Item.findByIdAndUpdate(req.params.id, { isDeleted: true });
+    if (!deleted) return res.status(404).json({ error: 'Không tìm thấy vật phẩm' });
+    res.json({ message: 'Đã xoá vật phẩm (ẩn)' });
   } catch (err) {
-    res.status(500).json({ error: "Lỗi server" });
+    res.status(500).json({ error: 'Lỗi server' });
   }
 };
+
 exports.importItems = async (req, res) => {
   try {
     const { manager, items } = req.body;

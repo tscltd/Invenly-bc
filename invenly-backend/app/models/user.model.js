@@ -15,7 +15,8 @@ const userSchema = new mongoose.Schema({
   },
   roles: {
     type: Array
-  }
+  },
+  isDeleted: { type: Boolean, default: false }
 });
 
 

@@ -10,7 +10,8 @@ const loanSchema = new mongoose.Schema({
   damaged: Boolean,
   damageNote: String,
   borrowerImageUrl: String,
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "user" }
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
+  isDeleted: { type: Boolean, default: false }
 }, { timestamps: true });
 
 export default mongoose.model("loan", loanSchema);

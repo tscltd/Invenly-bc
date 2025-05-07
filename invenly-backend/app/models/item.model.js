@@ -16,7 +16,8 @@ const itemSchema = new mongoose.Schema({
       key: String,
       value: String
     }
-  ]
+  ],
+  isDeleted: { type: Boolean, default: false }
 }, { timestamps: true });
 
 module.exports = mongoose.model("item", itemSchema);
