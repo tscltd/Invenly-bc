@@ -54,6 +54,26 @@ export default function BookListPage() {
     setFilteredBooks(results);
   };
 
+  const fallbackImages = [
+    '/images/book/sample1.jpg',
+    '/images/book/sample2.jpg',
+    '/images/book/sample3.jpg',
+    '/images/book/sample4.jpg',
+    '/images/book/sample5.jpg',
+    '/images/book/sample6.jpg',
+    '/images/book/sample7.jpg',
+    '/images/book/sample8.jpg',
+    '/images/book/sample9.jpg',
+    '/images/book/sample10.jpg',
+    '/images/book/sample11.jpg',
+    '/images/book/sample12.jpg',
+    '/images/book/sample13.jpg'
+  ];
+  
+  const getRandomFallbackImage = () => {
+    return fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
+  };
+  
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -83,7 +103,7 @@ export default function BookListPage() {
               <CardContent className="p-3 space-y-2 flex flex-col h-full">
               <div className="aspect-[3/4] w-full overflow-hidden rounded-md">
                     <img
-                      src={book.imageUrl || '/images/book/default.png'}
+                      src={book.imageUrl || getRandomFallbackImage()}
                       alt={book.name}
                       className="w-full h-full object-cover"
                     />
