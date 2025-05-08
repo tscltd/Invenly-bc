@@ -3,14 +3,31 @@ const { v4: uuidv4 } = require('uuid');
 const cloudinary = require('../utils/cloudinary');
 
 // Lấy danh sách tất cả vật phẩm chưa bị xóa
+// 8/5/2025 - tạm thời lấy list sách vừa nhập để lưu ảnh
+// exports.getAllItems = async (req, res) => {
+//   try {
+//     const items = await Item.find({ isDeleted: { $ne: true } });
+//     res.json(items);
+//   } catch (err) {
+//     res.status(500).json({ error: 'Lỗi server' });
+//   }
+// };
 exports.getAllItems = async (req, res) => {
   try {
     const items = await Item.find({ isDeleted: { $ne: true } });
-    res.json(items);
+
+    const sorted = items.sort((a, b) => {
+      const aDesc = parseInt(a.description || '0', 10);
+      const bDesc = parseInt(b.description || '0', 10);
+      return aDesc - bDesc;
+    });
+
+    res.json(sorted);
   } catch (err) {
     res.status(500).json({ error: 'Lỗi server' });
   }
 };
+
 
 // Lấy chi tiết vật phẩm theo ID (nếu chưa bị xóa)
 exports.getItemById = async (req, res) => {
