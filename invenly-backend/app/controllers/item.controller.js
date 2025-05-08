@@ -129,25 +129,43 @@ exports.importItems = async (req, res) => {
 exports.uploadImage = async (req, res) => {
   try {
     const file = req.file;
+    const itemId = req.params.id;
 
-    if (!file) return res.status(400).json({ error: 'Không có ảnh được gửi lên' });
+    if (!file) return res.status(400).json({ error: 'No image uploaded' });
 
-    const result = await cloudinary.uploader.upload_stream(
+    // Step 1: Find the current item to get the old image URL
+    const item = await Item.findById(itemId);
+    const oldImageUrl = item?.imageUrl;
+
+    // Step 2: If exists, extract public_id and delete from Cloudinary
+    if (oldImageUrl) {
+      const parts = oldImageUrl.split('/');
+      const filename = parts[parts.length - 1];
+      const publicId = 'ivenly-items/' + filename.split('.')[0];
+
+      await cloudinary.uploader.destroy(publicId);
+    }
+
+    // Step 3: Upload the new image
+    const stream = cloudinary.uploader.upload_stream(
       { folder: 'ivenly-items' },
-      (error, result) => {
+      async (error, result) => {
         if (error) {
           console.error('Cloudinary error:', error);
-          return res.status(500).json({ error: 'Upload thất bại' });
+          return res.status(500).json({ error: 'Image upload failed' });
         }
+
+        // Optionally update item with new URL
+        item.imageUrl = result.secure_url;
+        await item.save();
+
         return res.status(200).json({ imageUrl: result.secure_url });
       }
     );
 
-    // pipe buffer từ multer lên cloudinary
-    require('streamifier').createReadStream(file.buffer).pipe(result);
-
+    require('streamifier').createReadStream(file.buffer).pipe(stream);
   } catch (err) {
     console.error('[UPLOAD ERROR]', err);
-    res.status(500).json({ error: 'Server lỗi khi upload ảnh' });
+    res.status(500).json({ error: 'Server error during upload' });
   }
 };
