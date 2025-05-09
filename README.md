@@ -7,7 +7,7 @@ Invenly là hệ thống quản lý vật phẩm thông minh giúp tổ chức d
 ## 🔗 Demo
 
 - 🌐 Website: [invenly.vercel.app](https://invenly.vercel.app/)
-- 🧪 API base: [https://invenly-service.vercel.app/api/](https://invenly-service.vercel.app/api/)
+- 🧪 API base: [invenly-service.vercel.app/api/](https://invenly-service.vercel.app/api/)
 
 ---
 
