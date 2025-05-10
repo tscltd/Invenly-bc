@@ -74,79 +74,62 @@ export default function LoanScanPage() {
     };
   }, []);
 
-  const handleUploadImage = async () => {
+  const handleUploadImage = async (): Promise<string> => {
     if (!borrowerImageFile) return '';
+
     const formData = new FormData();
     formData.append('file', borrowerImageFile);
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/loan/upload-image`, {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('invenly_token') || ''}`
+      },
       body: formData,
     });
 
     const result = await res.json();
-    return result.url; // đảm bảo backend trả { url: '...' }
+
+    console.log(`upload image success !!!`)
+    return result.imageUrl;
   };
+
 
   const handleSubmit = async () => {
-    if (!borrowerName) {
-      alert('⚠️ Vui lòng nhập tên người mượn');
-      return;
-    }
+  setLoading(true);
+  try {
+    const imageUrl = await handleUploadImage();
 
-    const invalidDate = scannedItems.some((i) => !i.returnDueDate);
-    if (invalidDate) {
-      alert('⚠️ Vui lòng nhập ngày trả cho tất cả vật phẩm');
-      return;
-    }
+    const payload = {
+      borrowerName,
+      borrowerImageUrl: imageUrl,
+      items: scannedItems.map((i) => ({
+        code: i.code,
+        returnDueDate: i.returnDueDate,
+        damaged: i.damaged,
+        damageNote: i.damageNote,
+      })),
+    };
 
-    setLoading(true);
-    try {
-      const imageUrl = await handleUploadImage();
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/loan/batch`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-access-token': localStorage.getItem('accessToken') || '',
+        'Authorization': `Bearer ${localStorage.getItem('invenly_token') || ''}`
+      },
+      body: JSON.stringify(payload),
+    });
 
-      const payload = {
-        borrowerName,
-        items: scannedItems.map((i) => ({
-          code: i.code,
-          returnDueDate: i.returnDueDate,
-          damaged: i.damaged,
-          damageNote: i.damageNote,
-          borrowerImageUrl: imageUrl,
-        })),
-      };
+    const result = await res.json();
+    console.log(result)
+  } catch (err) {
+    console.log(err)
+  } finally {
+    setLoading(false);
+  }
+};
 
-      const token = localStorage.getItem('accessToken');
-
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/loan/batch`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-access-token': token || '',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await res.json();
-
-      if (res.ok) {
-        alert(`✅ Mượn thành công (${result.success})\n❌ Thất bại: ${result.failed.join(', ')}`);
-        setScannedItems([]);
-        setBorrowerName('');
-        setBorrowerImageFile(null);
-        setBorrowerImageUrl('');
-      } else if (res.status === 401) {
-        alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-        localStorage.setItem('pendingRequest', JSON.stringify(payload));
-        window.location.href = '/login';
-      } else {
-        alert(result.error || 'Lỗi khi mượn');
-      }
-    } catch (err) {
-      alert('Lỗi hệ thống khi gửi yêu cầu');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="p-6 space-y-4">
