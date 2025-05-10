@@ -90,11 +90,24 @@ export default function LoanScanPage() {
       body: formData,
     });
 
-    const result = await res.json();
+    // ✅ check 401 before attempting to parse JSON
+    if (res.status === 401) {
+      alert('⚠️ Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
 
-    console.log(`upload image success !!!`)
+      window.location.href = '/login';
+      return '';
+    }
+
+    if (!res.ok) {
+      setStatusMessage('❌ Upload ảnh thất bại');
+      return '';
+    }
+
+    const result = await res.json();
+    console.log(`upload image success !!!`);
     return result.imageUrl;
   };
+
 
 
   const handleSubmit = async () => {
@@ -130,6 +143,15 @@ export default function LoanScanPage() {
       });
 
       const result = await res.json();
+
+      if (res.status === 401) {
+        setStatusMessage('⚠️ Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+
+        localStorage.setItem('pendingLoanRequest', JSON.stringify(payload));
+        window.location.href = '/login'; // hoặc modal, tùy app bạn
+        return;
+      }
+
 
       if (res.ok) {
         setStatusMessage(`✅ Mượn thành công: ${result.success} vật phẩm\n❌ Thất bại: ${result.failed.join(', ')}`);
