@@ -13,6 +13,8 @@ export default function LoanScanPage() {
   const [borrowerImageFile, setBorrowerImageFile] = useState<File | null>(null);
   const [borrowerImageUrl, setBorrowerImageUrl] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
 
   const scannedCodesRef = useRef<Set<string>>(new Set());
 
@@ -96,40 +98,54 @@ export default function LoanScanPage() {
 
 
   const handleSubmit = async () => {
-  setLoading(true);
-  try {
-    const imageUrl = await handleUploadImage();
+    if (!borrowerName || scannedItems.some(i => !i.returnDueDate)) {
+      setStatusMessage('⚠️ Vui lòng nhập đủ thông tin');
+      return;
+    }
 
-    const payload = {
-      borrowerName,
-      borrowerImageUrl: imageUrl,
-      items: scannedItems.map((i) => ({
-        code: i.code,
-        returnDueDate: i.returnDueDate,
-        damaged: i.damaged,
-        damageNote: i.damageNote,
-      })),
-    };
+    setLoading(true);
+    setStatusMessage('⏳ Đang gửi yêu cầu...');
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/loan/batch`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-access-token': localStorage.getItem('accessToken') || '',
-        'Authorization': `Bearer ${localStorage.getItem('invenly_token') || ''}`
-      },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const imageUrl = await handleUploadImage();
 
-    const result = await res.json();
-    console.log(result)
-  } catch (err) {
-    console.log(err)
-  } finally {
-    setLoading(false);
-  }
-};
+      const payload = {
+        borrowerName,
+        borrowerImageUrl: imageUrl,
+        items: scannedItems.map((i) => ({
+          code: i.code,
+          returnDueDate: i.returnDueDate,
+          damaged: i.damaged,
+          damageNote: i.damageNote,
+        })),
+      };
 
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/loan/batch`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('invenly_token') || ''}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        setStatusMessage(`✅ Mượn thành công: ${result.success} vật phẩm\n❌ Thất bại: ${result.failed.join(', ')}`);
+        setScannedItems([]);
+        setBorrowerName('');
+        setBorrowerImageFile(null);
+      } else {
+        setStatusMessage(`❌ Gửi thất bại: ${result.error || 'Lỗi không xác định'}`);
+      }
+    } catch (err) {
+      setStatusMessage('❌ Lỗi hệ thống khi gửi yêu cầu');
+    } finally {
+      setLoading(false);
+      setTimeout(() => setStatusMessage(null), 6000); // tự động ẩn sau 6s
+    }
+  };
 
   return (
     <div className="p-6 space-y-4">
@@ -213,6 +229,13 @@ export default function LoanScanPage() {
           {loading ? 'Đang gửi...' : `Gửi yêu cầu mượn (${scannedItems.length} vật phẩm)`}
         </Button>
       )}
+
+      {statusMessage && (
+        <div className="bg-gray-100 border rounded p-3 text-sm text-gray-800">
+          {statusMessage}
+        </div>
+      )}
+
     </div>
   );
 }
