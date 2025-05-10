@@ -70,7 +70,7 @@ export default function LoanScanPage() {
           { facingMode: 'environment' },
           { fps: 10, qrbox: 250 },
           (decodedText: string) => handleResult(decodedText),
-          () => {}
+          () => { }
         )
         .catch((err) => console.error('🚫 Không thể mở camera:', err));
     });
@@ -198,79 +198,98 @@ export default function LoanScanPage() {
         {borrowerImageFile && <p className="text-sm text-muted-foreground">📎 {borrowerImageFile.name}</p>}
       </div>
 
-      {scannedItems.map((item, index) => (
-        <Card key={item.code}>
-          <CardContent className="p-4 space-y-2">
-            <div className="flex items-center gap-4">
-              <img src={item.imageUrl} className="w-12 h-12 rounded object-cover" />
-              <div>
-                <p className="font-medium">{item.name}</p>
-                <p className="text-xs text-muted-foreground">{item.code}</p>
-              </div>
-            </div>
-
-            <div>
-              <Label>Ngày trả</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !item.returnDueDate && 'text-muted-foreground'
+      {scannedItems.length > 0 && (
+        <div className="overflow-x-auto border rounded">
+          <table className="min-w-full text-sm">
+            <thead className="bg-muted">
+              <tr>
+                <th className="p-2 text-left">Ảnh</th>
+                <th className="p-2 text-left">Tên</th>
+                <th className="p-2 text-left">Mã</th>
+                <th className="p-2 text-left">Ngày trả</th>
+                <th className="p-2 text-left">Hư?</th>
+                <th className="p-2 text-left">Ghi chú</th>
+              </tr>
+            </thead>
+            <tbody>
+              {scannedItems.map((item, index) => (
+                <tr key={item.code} className="border-t">
+                  <td className="p-2">
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      className="w-12 h-12 rounded object-cover"
+                    />
+                  </td>
+                  <td className="p-2">{item.name}</td>
+                  <td className="p-2 text-xs text-muted-foreground">{item.code}</td>
+                  <td className="p-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            'justify-start text-left font-normal w-[150px]',
+                            !item.returnDueDate && 'text-muted-foreground'
+                          )}
+                        >
+                          {item.returnDueDate
+                            ? format(new Date(item.returnDueDate), 'dd/MM/yyyy')
+                            : 'Chọn ngày'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={
+                            item.returnDueDate
+                              ? new Date(item.returnDueDate)
+                              : undefined
+                          }
+                          onSelect={(date) => {
+                            const newItems = [...scannedItems];
+                            newItems[index].returnDueDate =
+                              date?.toISOString().split('T')[0] || '';
+                            setScannedItems(newItems);
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </td>
+                  <td className="p-2">
+                    <input
+                      type="checkbox"
+                      checked={item.damaged}
+                      onChange={(e) => {
+                        const newItems = [...scannedItems];
+                        newItems[index].damaged = e.target.checked;
+                        setScannedItems(newItems);
+                      }}
+                    />
+                  </td>
+                  <td className="p-2">
+                    {item.damaged && (
+                      <Textarea
+                        className="w-[200px] text-xs"
+                        rows={2}
+                        placeholder="Mô tả hư hỏng"
+                        value={item.damageNote}
+                        onChange={(e) => {
+                          const newItems = [...scannedItems];
+                          newItems[index].damageNote = e.target.value;
+                          setScannedItems(newItems);
+                        }}
+                      />
                     )}
-                  >
-                    {item.returnDueDate
-                      ? format(new Date(item.returnDueDate), 'dd/MM/yyyy')
-                      : 'Chọn ngày trả'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={item.returnDueDate ? new Date(item.returnDueDate) : undefined}
-                    onSelect={(date) => {
-                      const newItems = [...scannedItems];
-                      newItems[index].returnDueDate = date?.toISOString().split('T')[0] || '';
-                      setScannedItems(newItems);
-                    }}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-            <div className="flex items-center gap-2">
-              <input
-                id={`damaged-${index}`}
-                type="checkbox"
-                checked={item.damaged}
-                onChange={(e) => {
-                  const newItems = [...scannedItems];
-                  newItems[index].damaged = e.target.checked;
-                  setScannedItems(newItems);
-                }}
-              />
-              <Label htmlFor={`damaged-${index}`}>Vật phẩm bị hư?</Label>
-            </div>
-
-            {item.damaged && (
-              <div>
-                <Label>Mô tả hư hỏng</Label>
-                <Textarea
-                  placeholder="Mô tả hư hỏng"
-                  value={item.damageNote}
-                  onChange={(e) => {
-                    const newItems = [...scannedItems];
-                    newItems[index].damageNote = e.target.value;
-                    setScannedItems(newItems);
-                  }}
-                />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      ))}
 
       {scannedItems.length > 0 && (
         <Button className="w-full" onClick={handleSubmit} disabled={loading}>
