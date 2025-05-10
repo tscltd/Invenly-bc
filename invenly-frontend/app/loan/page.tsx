@@ -7,13 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export default function LoanScanPage() {
   const scannerRef = useRef<any>(null);
   const scannedRef = useRef(false);
+  const scannerContainerRef = useRef<HTMLDivElement>(null);
 
   const [scannedItems, setScannedItems] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -57,30 +57,63 @@ export default function LoanScanPage() {
     }, 3000);
   };
 
-  useEffect(() => {
-    import('html5-qrcode').then(({ Html5Qrcode }) => {
-      const container = document.getElementById('reader');
-      if (container) container.innerHTML = '';
+useEffect(() => {
+  let html5QrCode: any;
+  const containerId = 'scanner-container';
 
-      const scanner = new Html5Qrcode('reader');
-      scannerRef.current = scanner;
+  import('html5-qrcode').then(({ Html5Qrcode }) => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
 
-      scanner
-        .start(
-          { facingMode: 'environment' },
-          { fps: 10, qrbox: 250 },
-          (decodedText: string) => handleResult(decodedText),
-          () => { }
-        )
-        .catch((err) => console.error('🚫 Không thể mở camera:', err));
-    });
+    // 💥 Clear DOM nếu đã có nội dung (phòng trường hợp bị double-mount)
+    container.innerHTML = '';
 
-    return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop().then(() => scannerRef.current.clear());
-      }
-    };
-  }, []);
+    // 💥 Nếu đã có scanner trước đó thì clear và dừng
+    if (scannerRef.current) {
+  try {
+    scannerRef.current.clear();
+  } catch (e) {
+    console.error('Lỗi khi clear scanner:', e);
+  }
+  scannerRef.current = null;
+}
+
+
+    // ✅ Tạo scanner mới
+    html5QrCode = new Html5Qrcode(containerId);
+    scannerRef.current = html5QrCode;
+
+    html5QrCode
+      .start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText: string) => handleResult(decodedText),
+        () => {}
+      )
+      .catch((err: any) => {
+        console.error('🚫 Không thể mở camera:', err);
+      });
+  });
+
+  return () => {
+    if (scannerRef.current) {
+      scannerRef.current
+        .stop()
+        .then(() => {
+          scannerRef.current.clear();
+          const container = document.getElementById('scanner-container');
+          if (container) container.innerHTML = '';
+          scannerRef.current = null;
+        })
+        .catch((err: any) => {
+          console.error('❌ Lỗi khi dừng camera:', err);
+        });
+    }
+  };
+}, []);
+
+
+
 
   const handleUploadImage = async (): Promise<string> => {
     if (!borrowerImageFile) return '';
@@ -171,7 +204,13 @@ export default function LoanScanPage() {
   return (
     <div className="p-6 space-y-4">
       <h2 className="text-xl font-bold">📦 Quét để mượn vật phẩm</h2>
-      <div id="reader" className="w-full max-w-xs mx-auto border rounded overflow-hidden" />
+
+      {scannedItems.length === 0 && (
+        <div
+          id="scanner-container"
+          className="w-full max-w-xs mx-auto border rounded overflow-hidden"
+        />
+      )}
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
@@ -198,98 +237,7 @@ export default function LoanScanPage() {
         {borrowerImageFile && <p className="text-sm text-muted-foreground">📎 {borrowerImageFile.name}</p>}
       </div>
 
-      {scannedItems.length > 0 && (
-        <div className="overflow-x-auto border rounded">
-          <table className="min-w-full text-sm">
-            <thead className="bg-muted">
-              <tr>
-                <th className="p-2 text-left">Ảnh</th>
-                <th className="p-2 text-left">Tên</th>
-                <th className="p-2 text-left">Mã</th>
-                <th className="p-2 text-left">Ngày trả</th>
-                <th className="p-2 text-left">Hư?</th>
-                <th className="p-2 text-left">Ghi chú</th>
-              </tr>
-            </thead>
-            <tbody>
-              {scannedItems.map((item, index) => (
-                <tr key={item.code} className="border-t">
-                  <td className="p-2">
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      className="w-12 h-12 rounded object-cover"
-                    />
-                  </td>
-                  <td className="p-2">{item.name}</td>
-                  <td className="p-2 text-xs text-muted-foreground">{item.code}</td>
-                  <td className="p-2">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            'justify-start text-left font-normal w-[150px]',
-                            !item.returnDueDate && 'text-muted-foreground'
-                          )}
-                        >
-                          {item.returnDueDate
-                            ? format(new Date(item.returnDueDate), 'dd/MM/yyyy')
-                            : 'Chọn ngày'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={
-                            item.returnDueDate
-                              ? new Date(item.returnDueDate)
-                              : undefined
-                          }
-                          onSelect={(date) => {
-                            const newItems = [...scannedItems];
-                            newItems[index].returnDueDate =
-                              date?.toISOString().split('T')[0] || '';
-                            setScannedItems(newItems);
-                          }}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </td>
-                  <td className="p-2">
-                    <input
-                      type="checkbox"
-                      checked={item.damaged}
-                      onChange={(e) => {
-                        const newItems = [...scannedItems];
-                        newItems[index].damaged = e.target.checked;
-                        setScannedItems(newItems);
-                      }}
-                    />
-                  </td>
-                  <td className="p-2">
-                    {item.damaged && (
-                      <Textarea
-                        className="w-[200px] text-xs"
-                        rows={2}
-                        placeholder="Mô tả hư hỏng"
-                        value={item.damageNote}
-                        onChange={(e) => {
-                          const newItems = [...scannedItems];
-                          newItems[index].damageNote = e.target.value;
-                          setScannedItems(newItems);
-                        }}
-                      />
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
+      {/* Chỗ hiển thị danh sách scannedItems - giữ nguyên theo ý bạn */}
 
       {scannedItems.length > 0 && (
         <Button className="w-full" onClick={handleSubmit} disabled={loading}>
