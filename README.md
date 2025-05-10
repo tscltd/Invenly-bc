@@ -1,93 +1,16 @@
-# 📦 Invenly – Smart Inventory Management System
-
-Invenly là hệ thống quản lý vật phẩm thông minh giúp tổ chức dễ dàng theo dõi, nhập liệu, mượn trả và kiểm kê vật phẩm như sách, quà tặng, hoặc vật tư nội bộ. Tích hợp tính năng quét mã QR và nhập dữ liệu hàng loạt qua file Excel.
-
----
-
-## 🔗 Demo
-
-- 🌐 Website: [invenly.vercel.app](https://invenly.vercel.app/)
-- 🧪 API base: [invenly-service.vercel.app/api/](https://invenly-service.vercel.app/api/)
-
----
-
-## 🧰 Tech Stack
-
-- **Frontend**: [Next.js 14 (App Router)](https://nextjs.org/), [Tailwind CSS](https://tailwindcss.com/), [Shadcn UI](https://ui.shadcn.com/)
-- **Backend**: [Express.js](https://expressjs.com/), [MongoDB Atlas](https://www.mongodb.com/cloud/atlas), [Mongoose](https://mongoosejs.com/)
-- **Authentication**: JSON Web Token (JWT)
-- **QR Scanner**: `html5-qrcode`
-- **File Upload**: `multer` + Cloudinary
-- **Hosting**: Vercel (FE & BE deployed separately)
-- **Dev Tools**: TypeScript, Nodemon, ESLint, Prettier
-
----
-
-## ⚙️ Getting Started (Local Dev)
-
-### 1. Clone repo
-
-```bash
-git clone https://github.com/yourname/invenly.git
-cd invenly
-```
-
-### 2. Setup Frontend
-
-```bash
-cd invenly-frontend
-cp .env.local.example .env.local
-# Update .env.local with your API url
-npm install
-npm run dev
-```
-
-### 3. Setup Backend
-
-```bash
-cd invenly-backend
-cp .env.example .env
-# Update MongoDB URI, JWT secret, Cloudinary keys
-npm install
-npm run dev
-```
-
-
-## ✨ Core Features
-
-- ✅ Đăng nhập & phân quyền
-
-- 📚 Quản lý vật phẩm theo loại (sách, quà, vật tư,…)
-
-- 📥 Nhập dữ liệu hàng loạt từ Excel
-
-- 🧾 Gán mã QR và quét QR để truy cập thông tin nhanh
-
-- 🖼 Cập nhật ảnh từng vật phẩm
-
-- 📊 Trang xem thư viện sách với tìm kiếm nâng cao
-
-- 🧩 Quản lý thuộc tính động cho mỗi vật phẩm
-
-- 🗑 Xoá mềm (soft delete)
-
-## 📂 Folder Structure
-
-```graphql
-invenly/
-├── invenly-frontend/   # Next.js client app
-└── invenly-backend/    # Express REST API server
-```
-
-## 🧪 API Preview
-
-Xem chi tiết tại [đây](/invenly-backend/api.md)
-
-## 👨‍💻 Contributing
-
-PRs and issues welcome. Please follow coding standards and keep commits atomic.
-
-## 📜 License
-
-MIT © [dangth.dev](https://dangth.dev)
-
+| Ngày       | Chức năng / Module            | Mô tả Công Việc                                                                                                                        | Trạng thái      |
+| ---------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| 10/05/2025 | QR Scan & Ảnh mượn            | Sửa lỗi quét QR bị tạo nhiều luồng camera. Ổn định luồng quét và xử lý DOM.                                                            | ✅ Đã hoàn thành |
+| 10/05/2025 | Giao diện danh sách quét      | Refactor danh sách item đã quét từ card sang bảng có responsive. Hiển thị cột ảnh, tên, mã, ngày trả, hỏng, ghi chú.                   | ✅ Đã hoàn thành |
+| 10/05/2025 | UI Form mượn sách             | Tích hợp shadcn Calendar, cải thiện style form mượn sách. Thay thế input thô bằng UI đẹp, xử lý conflict date-fns.                     | ✅ Đã hoàn thành |
+| 10/05/2025 | Xử lý lỗi 401 toàn cục        | Phát hiện và xử lý lỗi 401, tự động redirect đến login, lưu yêu cầu loan chờ và gửi lại sau khi đăng nhập.                             | ✅ Đã hoàn thành |
+| 10/05/2025 | UX khi gửi phiếu mượn         | Thêm thông báo đang gửi, thành công, thất bại. Tự động reset form và ẩn thông báo sau delay.                                           | ✅ Đã hoàn thành |
+| 10/05/2025 | Gửi thông tin chi tiết item   | Upload ảnh người mượn, gửi damaged flag, note, ngày trả cho từng item. Kiểm tra token, hiển thị ảnh từng item trong UI.                | ✅ Đã hoàn thành |
+| 10/05/2025 | API mượn sách (backend)       | Tạo loan batch với thông tin đầy đủ từng item. Lưu createdBy từ token. Hỗ trợ upload ảnh Cloudinary, trả mã lỗi nếu sách không hợp lệ. | ✅ Đã hoàn thành |
+| 09/05/2025 | Cấu hình CI & tài liệu        | Cập nhật README.md, thêm và xoá cấu hình CI không cần thiết.                                                                           | ✅ Đã hoàn thành |
+| 08/05/2025 | UI & Tính năng danh sách sách | Cải thiện hiển thị, thêm popup mượn sách với form đầy đủ. Thêm fallback ảnh, Excel export, sorting mô tả.                              | ✅ Đã hoàn thành |
+| 07/05/2025 | Quản lý item nâng cao         | Soft delete, hỗ trợ thuộc tính động, quét QR lấy thông tin sách và cho phép chỉnh sửa hình ảnh, danh mục trực tiếp.                    | ✅ Đã hoàn thành |
+| 07/05/2025 | Import Excel                  | Upload file Excel, chuyển thành JSON có cấu trúc. Kiểm tra dữ liệu và xử lý TypeScript.                                                | ✅ Đã hoàn thành |
+| 07/05/2025 | Backend upload ảnh sách       | API upload ảnh qua Cloudinary, lưu link ảnh vào DB. Tích hợp multer + streamifier.                                                     | ✅ Đã hoàn thành |
+| 07/05/2025 | Dashboard & Auth              | Dashboard hiển thị tên người dùng từ token. Sửa lỗi đăng nhập, load đúng JWT từ `.env`, thêm biến môi trường cho API.                  | ✅ Đã hoàn thành |
+| 07/05/2025 | Khởi tạo hệ thống             | Commit khởi tạo hệ thống, cài đặt Firebase, JWT, quản lý user, item, QR scan, upload ảnh.                                              | ✅ Đã hoàn thành |
