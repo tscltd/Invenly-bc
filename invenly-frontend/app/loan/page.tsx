@@ -1,7 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export default function LoanScanPage() {
   const scannerRef = useRef<any>(null);
@@ -11,10 +19,8 @@ export default function LoanScanPage() {
   const [error, setError] = useState<string | null>(null);
   const [borrowerName, setBorrowerName] = useState('');
   const [borrowerImageFile, setBorrowerImageFile] = useState<File | null>(null);
-  const [borrowerImageUrl, setBorrowerImageUrl] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-
 
   const scannedCodesRef = useRef<Set<string>>(new Set());
 
@@ -64,7 +70,7 @@ export default function LoanScanPage() {
           { facingMode: 'environment' },
           { fps: 10, qrbox: 250 },
           (decodedText: string) => handleResult(decodedText),
-          () => { }
+          () => {}
         )
         .catch((err) => console.error('🚫 Không thể mở camera:', err));
     });
@@ -85,15 +91,13 @@ export default function LoanScanPage() {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/loan/upload-image`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('invenly_token') || ''}`
+        Authorization: `Bearer ${localStorage.getItem('invenly_token') || ''}`,
       },
       body: formData,
     });
 
-    // ✅ check 401 before attempting to parse JSON
     if (res.status === 401) {
       alert('⚠️ Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
-
       window.location.href = '/login';
       return '';
     }
@@ -104,14 +108,11 @@ export default function LoanScanPage() {
     }
 
     const result = await res.json();
-    console.log(`upload image success !!!`);
     return result.imageUrl;
   };
 
-
-
   const handleSubmit = async () => {
-    if (!borrowerName || scannedItems.some(i => !i.returnDueDate)) {
+    if (!borrowerName || scannedItems.some((i) => !i.returnDueDate)) {
       setStatusMessage('⚠️ Vui lòng nhập đủ thông tin');
       return;
     }
@@ -137,7 +138,7 @@ export default function LoanScanPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('invenly_token') || ''}`,
+          Authorization: `Bearer ${localStorage.getItem('invenly_token') || ''}`,
         },
         body: JSON.stringify(payload),
       });
@@ -146,12 +147,10 @@ export default function LoanScanPage() {
 
       if (res.status === 401) {
         setStatusMessage('⚠️ Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
-
         localStorage.setItem('pendingLoanRequest', JSON.stringify(payload));
-        window.location.href = '/login'; // hoặc modal, tùy app bạn
+        window.location.href = '/login';
         return;
       }
-
 
       if (res.ok) {
         setStatusMessage(`✅ Mượn thành công: ${result.success} vật phẩm\n❌ Thất bại: ${result.failed.join(', ')}`);
@@ -165,7 +164,7 @@ export default function LoanScanPage() {
       setStatusMessage('❌ Lỗi hệ thống khi gửi yêu cầu');
     } finally {
       setLoading(false);
-      setTimeout(() => setStatusMessage(null), 6000); // tự động ẩn sau 6s
+      setTimeout(() => setStatusMessage(null), 6000);
     }
   };
 
@@ -176,16 +175,18 @@ export default function LoanScanPage() {
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
-      <input
-        className="border p-2 rounded w-full"
-        placeholder="Tên người mượn"
+      <Label htmlFor="borrowerName">Tên người mượn</Label>
+      <Input
+        id="borrowerName"
+        placeholder="Nhập tên người mượn"
         value={borrowerName}
         onChange={(e) => setBorrowerName(e.target.value)}
       />
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium">Ảnh người mượn</label>
-        <input
+        <Label htmlFor="borrowerImage">Ảnh người mượn</Label>
+        <Input
+          id="borrowerImage"
           type="file"
           accept="image/*"
           onChange={(e) => {
@@ -194,70 +195,94 @@ export default function LoanScanPage() {
             }
           }}
         />
+        {borrowerImageFile && <p className="text-sm text-muted-foreground">📎 {borrowerImageFile.name}</p>}
       </div>
 
       {scannedItems.map((item, index) => (
-        <div key={item.code} className="border p-3 rounded space-y-2">
-          <div className="flex items-center space-x-3">
-            <img src={item.imageUrl} className="w-12 h-12 rounded object-cover" />
-            <div>
-              <p className="font-medium">{item.name}</p>
-              <p className="text-xs text-gray-600">{item.code}</p>
+        <Card key={item.code}>
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-center gap-4">
+              <img src={item.imageUrl} className="w-12 h-12 rounded object-cover" />
+              <div>
+                <p className="font-medium">{item.name}</p>
+                <p className="text-xs text-muted-foreground">{item.code}</p>
+              </div>
             </div>
-          </div>
 
-          <input
-            type="date"
-            value={item.returnDueDate}
-            onChange={(e) => {
-              const newItems = [...scannedItems];
-              newItems[index].returnDueDate = e.target.value;
-              setScannedItems(newItems);
-            }}
-            className="border rounded p-2 w-full"
-          />
+            <div>
+              <Label>Ngày trả</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-full justify-start text-left font-normal',
+                      !item.returnDueDate && 'text-muted-foreground'
+                    )}
+                  >
+                    {item.returnDueDate
+                      ? format(new Date(item.returnDueDate), 'dd/MM/yyyy')
+                      : 'Chọn ngày trả'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={item.returnDueDate ? new Date(item.returnDueDate) : undefined}
+                    onSelect={(date) => {
+                      const newItems = [...scannedItems];
+                      newItems[index].returnDueDate = date?.toISOString().split('T')[0] || '';
+                      setScannedItems(newItems);
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
 
-          <label className="flex items-center space-x-2 text-sm">
-            <input
-              type="checkbox"
-              checked={item.damaged}
-              onChange={(e) => {
-                const newItems = [...scannedItems];
-                newItems[index].damaged = e.target.checked;
-                setScannedItems(newItems);
-              }}
-            />
-            <span>Vật phẩm bị hư?</span>
-          </label>
+            <div className="flex items-center gap-2">
+              <input
+                id={`damaged-${index}`}
+                type="checkbox"
+                checked={item.damaged}
+                onChange={(e) => {
+                  const newItems = [...scannedItems];
+                  newItems[index].damaged = e.target.checked;
+                  setScannedItems(newItems);
+                }}
+              />
+              <Label htmlFor={`damaged-${index}`}>Vật phẩm bị hư?</Label>
+            </div>
 
-          {item.damaged && (
-            <textarea
-              placeholder="Mô tả hư hỏng"
-              value={item.damageNote}
-              onChange={(e) => {
-                const newItems = [...scannedItems];
-                newItems[index].damageNote = e.target.value;
-                setScannedItems(newItems);
-              }}
-              className="border rounded p-2 w-full"
-              rows={2}
-            />
-          )}
-        </div>
+            {item.damaged && (
+              <div>
+                <Label>Mô tả hư hỏng</Label>
+                <Textarea
+                  placeholder="Mô tả hư hỏng"
+                  value={item.damageNote}
+                  onChange={(e) => {
+                    const newItems = [...scannedItems];
+                    newItems[index].damageNote = e.target.value;
+                    setScannedItems(newItems);
+                  }}
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
       ))}
 
       {scannedItems.length > 0 && (
         <Button className="w-full" onClick={handleSubmit} disabled={loading}>
-          {loading ? 'Đang gửi...' : `Gửi yêu cầu mượn (${scannedItems.length} vật phẩm)`}
+          {loading ? 'Đang gửi...' : `📤 Gửi yêu cầu mượn (${scannedItems.length})`}
         </Button>
       )}
 
       {statusMessage && (
-        <div className="bg-gray-100 border rounded p-3 text-sm text-gray-800">
+        <div className="bg-gray-100 border rounded p-3 text-sm text-gray-800 whitespace-pre-line">
           {statusMessage}
         </div>
       )}
-
     </div>
   );
 }
